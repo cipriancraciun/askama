@@ -126,6 +126,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             "fn write_into <W: ::std::fmt::Write + ?::std::marker::Sized> (&self, writer: &mut W) -> \
              ::askama::Result<()> {",
         )?;
+        buf.writeln("use ::std::iter::IntoIterator as _;")?;
 
         // Make sure the compiler understands that the generated code depends on the template files.
         for path in self.contexts.keys() {
@@ -152,16 +153,16 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         }?;
 
         self.flush_ws(WS(false, false));
-        buf.writeln("Ok(())")?;
+        buf.writeln("::std::result::Result::Ok(())")?;
         buf.writeln("}")?;
 
         buf.writeln("fn size_hint() -> usize {")?;
         buf.writeln(&format!("{}", size_hint))?;
         buf.writeln("}")?;
 
-        buf.writeln("fn extension() -> Option<&'static str> {")?;
+        buf.writeln("fn extension() -> ::std::option::Option<&'static str> {")?;
         buf.writeln(&format!(
-            "{:?}",
+            "::std::option::Option::{:?}",
             self.input.path.extension().map(|s| s.to_str().unwrap())
         ))?;
         buf.writeln("}")?;
@@ -174,7 +175,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
                 use ::askama::SizedTemplate;
                 let mut buf = ::std::string::String::with_capacity(self.size_hint());
                 self.write_into(&mut buf)?;
-                Ok(buf)
+                ::std::result::Result::Ok(buf)
             }
             fn render_into(&self, writer: &mut dyn ::std::fmt::Write) -> ::askama::Result<()> {
                 use ::askama::SizedTemplate;
@@ -184,7 +185,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
                 use ::askama::SizedTemplate;
                 let mut buf = ::std::vec::Vec::with_capacity(self.size_hint());
                 self.write_into_bytes(&mut buf)?;
-                Ok(buf)
+                ::std::result::Result::Ok(buf)
             }
             fn render_into_bytes(&self, writer: &mut dyn ::std::io::Write) -> ::askama::Result<()> {
                 use ::askama::SizedTemplate;
@@ -192,9 +193,9 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             }",
         )?;
 
-        buf.writeln("fn extension(&self) -> Option<&'static str> {")?;
+        buf.writeln("fn extension(&self) -> ::std::option::Option<&'static str> {")?;
         buf.writeln(&format!(
-            "{:?}",
+            "::std::option::Option::{:?}",
             self.input.path.extension().map(|s| s.to_str().unwrap())
         ))?;
         buf.writeln("}")?;
@@ -994,7 +995,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             }
         }
 
-        buf.writeln("write!(")?;
+        buf.writeln("::std::write!(")?;
         buf.indent();
         buf.writeln("writer,")?;
         buf.writeln(&format!("{:#?},", &buf_format.buf))?;
