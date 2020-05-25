@@ -1,8 +1,8 @@
 [package]
-name = "askama_escape"
+name = "askama_patched_escape"
 version = "0.10.1"
-authors = ["Dirkjan Ochtman <dirkjan@ochtman.nl>"]
-description = "Optimized HTML escaping code, extracted from Askama"
+authors = ["Ciprian Dorin Craciun <ciprian@volution.ro>", "Dirkjan Ochtman <dirkjan@ochtman.nl>"]
+description = "[patched fork] Optimized HTML escaping code, extracted from Askama"
 documentation = "https://docs.rs/askama_escape"
 keywords = ["html", "escaping"]
 homepage = "https://github.com/djc/askama"

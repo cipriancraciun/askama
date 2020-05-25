@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate criterion;
 
-use askama_escape::{Html, MarkupDisplay};
+use askama_patched_escape::{Html, MarkupDisplay};
 use criterion::Criterion;
 
 criterion_main!(benches);

@@ -1,7 +1,7 @@
 [package]
-name = "askama_testing"
+name = "askama_patched_testing"
 version = "0.1.0"
-authors = ["Dirkjan Ochtman <dirkjan@ochtman.nl>"]
+authors = ["Ciprian Dorin Craciun <ciprian@volution.ro>", "Dirkjan Ochtman <dirkjan@ochtman.nl>"]
 workspace = ".."
 edition = "2018"
 publish = false
@@ -10,7 +10,7 @@ publish = false
 default = ["serde_json", "askama/serde-json"]
 
 [dependencies]
-askama = { path = "../askama", version = "*" }
+askama = { package = "askama_patched", path = "../askama", version = "*" }
 serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
