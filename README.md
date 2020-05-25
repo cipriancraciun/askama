@@ -1,4 +1,19 @@
-# Askama
+# [patched fork] Askama
+
+
+**This is a patched fork!**  What follows bellow after the line, is from the original Askama readme.
+
+In order to use this patched fork you can do the following:
+* just replace `askama` with `askama_patched` in your `Cargo.toml` and Rust sources;
+* alternatively, as a drop-in replacement without changing any of your Rust sources just rename the dependency in `Cargo.toml` as:
+~~~~
+[dependencies]
+askama = { package = "askama_patched", version = "*" }
+~~~~
+
+
+----
+
 
 [![Documentation](https://docs.rs/askama/badge.svg)](https://docs.rs/askama/)
 [![Latest version](https://img.shields.io/crates/v/askama.svg)](https://crates.io/crates/askama)
