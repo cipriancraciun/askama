@@ -1,3 +1,7 @@
+//! **This is a patched fork of Askama!**
+//!
+//! ----
+//!
 //! Askama implements a type-safe compiler for Jinja-like templates.
 //! It lets you write templates in a Jinja-like syntax,
 //! which are linked to a `struct` defining the template context.
