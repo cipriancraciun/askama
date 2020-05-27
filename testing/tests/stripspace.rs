@@ -9,7 +9,7 @@ fn test_strip_space() {
     let template = StripSpace;
     assert_eq!(
         template.render().unwrap(),
-        "[\n1 a2 b3 c4 d7 g8 h I i  M m \n]"
+        "[\n1 a2 b3 c4 d7 g8 h I i  M1 m1  M2 m2 \n]"
     );
 }
 
