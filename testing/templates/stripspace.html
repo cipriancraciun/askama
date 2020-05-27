@@ -19,8 +19,10 @@
   7
   8
 
-{% macro stripspacenested() %}
-{% endmacro %}
+{% include "stripspace-included.html" %}
+
+{% macro stripspace_nested_macro() %} M {% endmacro %}
+{% call stripspace_nested_macro() %}
 
 {% endstripspace %}
 ]
