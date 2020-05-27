@@ -159,6 +159,7 @@ enum ContentState {
     Any,
     Brace(usize),
     End(usize),
+    Space(usize),
 }
 
 fn take_content<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> ParserError<'a, Node<'a>> {
@@ -176,8 +177,17 @@ fn take_content<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> ParserError<'a, Node<'a>>
             Start | Any => {
                 if *c == bs || *c == es || *c == cs {
                     Brace(idx)
+                } else if *c == b'\n' {
+                    Space(idx)
                 } else {
                     Any
+                }
+            }
+            Space(_) => {
+                if *c == b' ' || *c == b'\t' || *c == b'\r' || *c == b'\n' {
+                    Space(idx)
+                } else {
+                    break;
                 }
             }
             Brace(start) => {
@@ -201,6 +211,7 @@ fn take_content<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> ParserError<'a, Node<'a>>
             nom::error::ErrorKind::TakeUntil
         ))),
         End(start) => Ok((&i[start..], split_ws_parts(&i[..start]))),
+        Space(start) => Ok((&i[start + 1..], split_ws_parts(&i[..start + 1]))),
     }
 }
 
