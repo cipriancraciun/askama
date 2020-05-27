@@ -623,6 +623,8 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         };
 
         self.flush_ws(ws); // Cannot handle_ws() here: whitespace from macro definition comes first
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
         self.locals.push();
         self.write_buf_writable(buf);
         buf.writeln("{");
@@ -643,12 +645,15 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         size_hint += self.write_buf_writable(buf);
         buf.writeln("}");
         self.locals.pop();
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(ws);
         size_hint
     }
 
     fn handle_include(&mut self, ctx: &'a Context, buf: &mut Buffer, ws: WS, path: &str) -> usize {
         self.flush_ws(ws);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
         self.write_buf_writable(buf);
         let path = self
             .input
@@ -676,6 +681,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             size_hint += gen.write_buf_writable(buf);
             size_hint
         };
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(ws);
         size_hint
     }
@@ -734,6 +740,8 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     fn write_block(&mut self, buf: &mut Buffer, name: Option<&'a str>, outer: WS) -> usize {
         // Flush preceding whitespace according to the outer WS spec
         self.flush_ws(outer);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
 
         let prev_block = self.super_block;
         let cur = match (name, prev_block) {
@@ -787,6 +795,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         // Restore original block context and set whitespace suppression for
         // succeeding whitespace according to the outer WS spec
         self.super_block = prev_block;
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(outer);
         size_hint
     }
