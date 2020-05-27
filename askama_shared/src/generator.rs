@@ -488,7 +488,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
                     // except for the blocks defined in it.
                 }
                 Node::StripSpace(ws1, ref contents, ws2) => {
-                    size_hint += self.write_strip_space(ctx, buf, ws1, contents, ws2)?;
+                    size_hint += self.write_strip_space(ctx, buf, ws1, contents, ws2, level)?;
                 }
             }
         }
@@ -919,12 +919,13 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         ws1: WS,
         contents: &'a [Node],
         ws2: WS,
+        level: AstLevel,
     ) -> Result<usize, CompileError> {
         self.flush_ws(ws1);
         let old_strip_ws = self.strip_ws;
         self.strip_ws = true;
         self.prepare_ws(ws1);
-        let size_hint = self.handle(ctx, &contents, buf, AstLevel::Nested)?;
+        let size_hint = self.handle(ctx, &contents, buf, level)?;
         self.flush_ws(ws2);
         self.strip_ws = old_strip_ws;
         self.prepare_ws(ws2);
