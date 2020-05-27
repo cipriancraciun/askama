@@ -1056,7 +1056,7 @@ fn space_node<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> IResult<&'a [u8], Node<'a>>
     let p = tuple((
         |i| tag_block_start(i, s),
         opt(tag("-")),
-        ws(alt((tag("space"), tag("tab"), tag("newline")))),
+        ws(alt((tag("nop"), tag("space"), tag("tab"), tag("newline")))),
         opt(tag("-")),
         |i| tag_block_end(i, s),
     ));
@@ -1064,6 +1064,7 @@ fn space_node<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> IResult<&'a [u8], Node<'a>>
     let ws1 = WS(pws.is_some(), false);
     let ws2 = WS(false, nws.is_some());
     match tag {
+        b"nop" => Ok((i, Node::Raw(ws1, "", ws2))),
         b"space" => Ok((i, Node::Raw(ws1, " ", ws2))),
         b"tab" => Ok((i, Node::Raw(ws1, "\t", ws2))),
         b"newline" => Ok((i, Node::Raw(ws1, "\n", ws2))),
