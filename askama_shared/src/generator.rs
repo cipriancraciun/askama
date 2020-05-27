@@ -1018,6 +1018,9 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     }
 
     fn visit_lit(&mut self, lws: &'a str, val: &'a str, rws: &'a str) {
+        if self.next_ws.is_some() {
+            self.flush_ws(WS(false, false));
+        }
         assert!(self.next_ws.is_none());
         if !lws.is_empty() {
             if self.skip_ws {
