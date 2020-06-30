@@ -27,6 +27,7 @@ pub enum Node<'a> {
     Import(WS, &'a str, &'a str),
     Macro(&'a str, Macro<'a>),
     Raw(WS, &'a str, WS),
+    StripSpace(WS, Vec<Node<'a>>, WS),
 }
 
 #[derive(Debug, PartialEq)]
@@ -158,6 +159,7 @@ enum ContentState {
     Any,
     Brace(usize),
     End(usize),
+    Space(usize),
 }
 
 fn take_content<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> ParserError<'a, Node<'a>> {
@@ -175,8 +177,17 @@ fn take_content<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> ParserError<'a, Node<'a>>
             Start | Any => {
                 if *c == bs || *c == es || *c == cs {
                     Brace(idx)
+                } else if *c == b'\n' {
+                    Space(idx)
                 } else {
                     Any
+                }
+            }
+            Space(_) => {
+                if *c == b' ' || *c == b'\t' || *c == b'\r' || *c == b'\n' {
+                    Space(idx)
+                } else {
+                    break;
                 }
             }
             Brace(start) => {
@@ -200,6 +211,7 @@ fn take_content<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> ParserError<'a, Node<'a>>
             nom::error::ErrorKind::TakeUntil
         ))),
         End(start) => Ok((&i[start..], split_ws_parts(&i[..start]))),
+        Space(start) => Ok((&i[start + 1..], split_ws_parts(&i[..start + 1]))),
     }
 }
 
@@ -1003,6 +1015,7 @@ fn block_node<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> IResult<&'a [u8], Node<'a>>
             |i| block_block(i, s),
             |i| block_macro(i, s),
             |i| block_raw(i, s),
+            |i| block_strip_space(i, s),
         )),
         |i| tag_block_end(i, s),
     ));
@@ -1027,12 +1040,56 @@ fn block_comment<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> IResult<&'a [u8], Node<'
     ))
 }
 
+fn block_strip_space<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> IResult<&'a [u8], Node<'a>> {
+    let p = tuple((
+        opt(tag("-")),
+        ws(tag("stripspace")),
+        opt(tag("-")),
+        |i| tag_block_end(i, s),
+        |i| parse_template(i, s),
+        |i| tag_block_start(i, s),
+        opt(tag("-")),
+        ws(tag("endstripspace")),
+        opt(tag("-")),
+    ));
+    let (i, (pws1, _, nws1, _, contents, _, pws2, _, nws2)) = p(i)?;
+    Ok((
+        i,
+        Node::StripSpace(
+            WS(pws1.is_some(), nws1.is_some()),
+            contents,
+            WS(pws2.is_some(), nws2.is_some()),
+        ),
+    ))
+}
+
+fn space_node<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> IResult<&'a [u8], Node<'a>> {
+    let p = tuple((
+        |i| tag_block_start(i, s),
+        opt(tag("-")),
+        ws(alt((tag("nop"), tag("space"), tag("tab"), tag("newline")))),
+        opt(tag("-")),
+        |i| tag_block_end(i, s),
+    ));
+    let (i, (_, pws, tag, nws, _)) = p(i)?;
+    let ws1 = WS(pws.is_some(), false);
+    let ws2 = WS(false, nws.is_some());
+    match tag {
+        b"nop" => Ok((i, Node::Raw(ws1, "", ws2))),
+        b"space" => Ok((i, Node::Raw(ws1, " ", ws2))),
+        b"tab" => Ok((i, Node::Raw(ws1, "\t", ws2))),
+        b"newline" => Ok((i, Node::Raw(ws1, "\n", ws2))),
+        _ => panic!("cannot happen"),
+    }
+}
+
 fn parse_template<'a>(i: &'a [u8], s: &'a Syntax<'a>) -> IResult<&'a [u8], Vec<Node<'a>>> {
     many0(alt((
         complete(|i| take_content(i, s)),
         complete(|i| block_comment(i, s)),
         complete(|i| expr_node(i, s)),
         complete(|i| block_node(i, s)),
+        complete(|i| space_node(i, s)),
     )))(i)
 }
 
