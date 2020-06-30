@@ -42,6 +42,8 @@ struct Generator<'a, S: std::hash::BuildHasher> {
     // Whitespace suppression from the previous non-literal. Will be used to
     // determine whether to flush prefix whitespace from the next literal.
     skip_ws: bool,
+    // Always apply whitespace suppression in `stripspace` blocks.
+    strip_ws: bool,
     // If currently in a block, this will contain the name of a potential parent block
     super_block: Option<(&'a str, usize)>,
     // buffer for writable
@@ -66,6 +68,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             locals,
             next_ws: None,
             skip_ws: false,
+            strip_ws: false,
             super_block: None,
             buf_writable: vec![],
             named: 0,
@@ -419,6 +422,9 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
                     // No whitespace handling: child template top-level is not used,
                     // except for the blocks defined in it.
                 }
+                Node::StripSpace(ws1, ref contents, ws2) => {
+                    size_hint += self.write_strip_space(ctx, buf, ws1, contents, ws2, level);
+                }
             }
         }
 
@@ -640,6 +646,8 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         };
 
         self.flush_ws(ws); // Cannot handle_ws() here: whitespace from macro definition comes first
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
         self.locals.push();
         self.write_buf_writable(buf);
         buf.writeln("{");
@@ -660,12 +668,15 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         size_hint += self.write_buf_writable(buf);
         buf.writeln("}");
         self.locals.pop();
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(ws);
         size_hint
     }
 
     fn handle_include(&mut self, ctx: &'a Context, buf: &mut Buffer, ws: WS, path: &str) -> usize {
         self.flush_ws(ws);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
         self.write_buf_writable(buf);
         let path = self
             .input
@@ -693,6 +704,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             size_hint += gen.write_buf_writable(buf);
             size_hint
         };
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(ws);
         size_hint
     }
@@ -751,6 +763,8 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     fn write_block(&mut self, buf: &mut Buffer, name: Option<&'a str>, outer: WS) -> usize {
         // Flush preceding whitespace according to the outer WS spec
         self.flush_ws(outer);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
 
         let prev_block = self.super_block;
         let cur = match (name, prev_block) {
@@ -804,6 +818,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         // Restore original block context and set whitespace suppression for
         // succeeding whitespace according to the outer WS spec
         self.super_block = prev_block;
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(outer);
         size_hint
     }
@@ -811,6 +826,26 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     fn write_expr(&mut self, ws: WS, s: &'a Expr<'a>) {
         self.handle_ws(ws);
         self.buf_writable.push(Writable::Expr(s));
+    }
+
+    fn write_strip_space(
+        &mut self,
+        ctx: &'a Context,
+        buf: &mut Buffer,
+        ws1: WS,
+        contents: &'a [Node],
+        ws2: WS,
+        level: AstLevel,
+    ) -> usize {
+        self.flush_ws(ws1);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = true;
+        self.prepare_ws(ws1);
+        let size_hint = self.handle(ctx, &contents, buf, level);
+        self.flush_ws(ws2);
+        self.strip_ws = old_strip_ws;
+        self.prepare_ws(ws2);
+        size_hint
     }
 
     // Write expression buffer and empty
@@ -884,6 +919,9 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     }
 
     fn visit_lit(&mut self, lws: &'a str, val: &'a str, rws: &'a str) {
+        if self.next_ws.is_some() {
+            self.flush_ws(WS(false, false));
+        }
         assert!(self.next_ws.is_none());
         if !lws.is_empty() {
             if self.skip_ws {
@@ -1282,7 +1320,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     // prefix whitespace suppressor from the given argument, flush that whitespace.
     // In either case, `next_ws` is reset to `None` (no trailing whitespace).
     fn flush_ws(&mut self, ws: WS) {
-        if self.next_ws.is_some() && !ws.0 {
+        if self.next_ws.is_some() && !self.strip_ws && !ws.0 {
             let val = self.next_ws.unwrap();
             if !val.is_empty() {
                 self.buf_writable.push(Writable::Lit(val));
@@ -1295,7 +1333,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     // argument, to determine whether to suppress leading whitespace from the
     // next literal.
     fn prepare_ws(&mut self, ws: WS) {
-        self.skip_ws = ws.1;
+        self.skip_ws = self.strip_ws || ws.1;
     }
 }
 

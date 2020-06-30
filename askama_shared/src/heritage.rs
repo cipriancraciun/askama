@@ -47,10 +47,9 @@ impl<'a> Context<'a> {
         let mut blocks = Vec::new();
         let mut macros = HashMap::new();
         let mut imports = HashMap::new();
-        let mut nested = vec![nodes];
-        let mut top = true;
+        let mut nested = vec![(true, nodes)];
 
-        while let Some(nodes) = nested.pop() {
+        while let Some((top, nodes)) = nested.pop() {
             for n in nodes {
                 match n {
                     Node::Extends(Expr::StrLit(extends_path)) if top => match extends {
@@ -72,26 +71,28 @@ impl<'a> Context<'a> {
                     def @ Node::BlockDef(_, _, _, _) => {
                         blocks.push(def);
                         if let Node::BlockDef(_, _, nodes, _) = def {
-                            nested.push(nodes);
+                            nested.push((false, nodes));
                         }
                     }
                     Node::Cond(branches, _) => {
                         for (_, _, nodes) in branches {
-                            nested.push(nodes);
+                            nested.push((false, nodes));
                         }
                     }
                     Node::Loop(_, _, _, nodes, _) => {
-                        nested.push(nodes);
+                        nested.push((false, nodes));
                     }
                     Node::Match(_, _, _, arms, _) => {
                         for (_, _, _, arm) in arms {
-                            nested.push(arm);
+                            nested.push((false, arm));
                         }
+                    }
+                    Node::StripSpace(_, ref nodes, _) => {
+                        nested.push((top, nodes));
                     }
                     _ => {}
                 }
             }
-            top = false;
         }
 
         let blocks: HashMap<_, _> = blocks
