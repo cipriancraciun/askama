@@ -8,7 +8,7 @@ use std::{env, fmt, fs};
 #[cfg(feature = "serde")]
 use serde::Deserialize;
 
-pub use askama_escape::MarkupDisplay;
+pub use askama_patched_escape::MarkupDisplay;
 
 mod error;
 pub use crate::error::{Error, Result};

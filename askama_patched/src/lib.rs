@@ -65,14 +65,14 @@
 
 #![allow(unused_imports)]
 #[macro_use]
-extern crate askama_derive;
-pub use askama_shared as shared;
+extern crate askama_patched_derive;
+pub use askama_patched_shared as shared;
 
 use std::fs::{self, DirEntry};
 use std::io;
 use std::path::Path;
 
-pub use askama_escape::{Html, Text};
+pub use askama_patched_escape::{Html, Text};
 
 /// Main `Template` trait; implementations are generally derived
 pub trait Template {
@@ -100,7 +100,7 @@ pub trait SizedTemplate {
 pub use crate::shared::filters;
 pub use crate::shared::helpers;
 pub use crate::shared::{read_config_file, Error, MarkupDisplay, Result};
-pub use askama_derive::*;
+pub use askama_patched_derive::*;
 
 pub mod mime {
     #[cfg(all(feature = "mime_guess", feature = "mime"))]
