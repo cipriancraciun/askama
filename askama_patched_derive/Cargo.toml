@@ -24,6 +24,6 @@ tide = []
 warp = []
 
 [dependencies]
-askama_shared = { package = "askama_patched_shared", version = "0.11", path = "../askama_shared" }
+askama_patched_shared = { version = "0.11", path = "../askama_patched_shared" }
 proc-macro2 = "1"
 syn = "1"

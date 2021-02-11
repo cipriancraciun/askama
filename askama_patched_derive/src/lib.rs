@@ -1,9 +1,9 @@
 extern crate proc_macro;
 
-use askama_shared::heritage::{Context, Heritage};
-use askama_shared::input::{Print, Source, TemplateInput};
-use askama_shared::parser::{parse, Expr, Node};
-use askama_shared::{
+use askama_patched_shared::heritage::{Context, Heritage};
+use askama_patched_shared::input::{Print, Source, TemplateInput};
+use askama_patched_shared::parser::{parse, Expr, Node};
+use askama_patched_shared::{
     generator, get_template_source, read_config_file, CompileError, Config, Integrations,
 };
 use proc_macro::TokenStream;

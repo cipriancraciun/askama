@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use askama_escape::{Escaper, MarkupDisplay};
+use askama_patched_escape::{Escaper, MarkupDisplay};
 use serde::Serialize;
 
 /// Serialize to JSON (requires `serde_json` feature)
@@ -18,7 +18,7 @@ pub fn yaml<E: Escaper, S: Serialize>(e: E, s: &S) -> Result<MarkupDisplay<E, St
 #[cfg(test)]
 mod tests {
     use super::*;
-    use askama_escape::Html;
+    use askama_patched_escape::Html;
 
     #[test]
     fn test_yaml() {

@@ -1,16 +1,16 @@
 [workspace]
 members = [
-    "askama",
-    "askama_derive",
-    "askama_escape",
-    "askama_shared",
+    "askama_patched",
+    "askama_patched_derive",
+    "askama_patched_escape",
+    "askama_patched_shared",
     "testing",
 ]
 
 default-members = [
-    "askama",
-    "askama_derive",
-    "askama_escape",
-    "askama_shared",
+    "askama_patched",
+    "askama_patched_derive",
+    "askama_patched_escape",
+    "askama_patched_shared",
     "testing",
 ]

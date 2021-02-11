@@ -19,7 +19,7 @@ pub use self::yaml::yaml;
 
 #[allow(unused_imports)]
 use crate::error::Error::Fmt;
-use askama_escape::{Escaper, MarkupDisplay};
+use askama_patched_escape::{Escaper, MarkupDisplay};
 #[cfg(feature = "humansize")]
 use humansize::{file_size_opts, FileSize};
 #[cfg(feature = "num-traits")]

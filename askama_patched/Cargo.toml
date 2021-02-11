@@ -18,24 +18,24 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["config", "humansize", "num-traits", "urlencode"]
-config = ["askama_shared/config"]
-humansize = ["askama_shared/humansize"]
-urlencode = ["askama_shared/percent-encoding"]
-serde-json = ["askama_shared/json"]
-serde-yaml = ["askama_shared/yaml"]
-num-traits = ["askama_shared/num-traits"]
-with-actix-web = ["askama_derive/actix-web"]
-with-gotham = ["askama_derive/gotham"]
-with-iron = ["askama_derive/iron"]
-with-mendes = ["askama_derive/mendes"]
-with-rocket = ["askama_derive/rocket"]
-with-tide = ["askama_derive/tide"]
-with-warp = ["askama_derive/warp"]
+config = ["askama_patched_shared/config"]
+humansize = ["askama_patched_shared/humansize"]
+urlencode = ["askama_patched_shared/percent-encoding"]
+serde-json = ["askama_patched_shared/json"]
+serde-yaml = ["askama_patched_shared/yaml"]
+num-traits = ["askama_patched_shared/num-traits"]
+with-actix-web = ["askama_patched_derive/actix-web"]
+with-gotham = ["askama_patched_derive/gotham"]
+with-iron = ["askama_patched_derive/iron"]
+with-mendes = ["askama_patched_derive/mendes"]
+with-rocket = ["askama_patched_derive/rocket"]
+with-tide = ["askama_patched_derive/tide"]
+with-warp = ["askama_patched_derive/warp"]
 
 [dependencies]
-askama_derive = { package = "askama_patched_derive", version = "0.10", path = "../askama_derive" }
-askama_escape = { package = "askama_patched_escape", version = "0.10", path = "../askama_escape" }
-askama_shared = { package = "askama_patched_shared", version = "0.11", path = "../askama_shared", default-features = false }
+askama_patched_derive = { version = "0.10", path = "../askama_patched_derive" }
+askama_patched_escape = { version = "0.10", path = "../askama_patched_escape" }
+askama_patched_shared = { version = "0.11", path = "../askama_patched_shared", default-features = false }
 mime = { version = "0.3", optional = true }
 mime_guess = { version = "2.0.0-alpha", optional = true }
 
