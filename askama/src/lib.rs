@@ -6,10 +6,10 @@
 //! It lets you write templates in a Jinja-like syntax,
 //! which are linked to a `struct` defining the template context.
 //! This is done using a custom derive implementation (implemented
-//! in [`askama_derive`](https://crates.io/crates/askama_derive)).
+//! in [`askama_derive`](https://crates.io/crates/askama_patched_derive)).
 //!
 //! For feature highlights and a quick start, please review the
-//! [README](https://github.com/djc/askama/blob/main/README.md).
+//! [README](https://github.com/cipriancraciun/askama/blob/main/README.md).
 //!
 //! The primary documentation for this crate now lives in
 //! [the book](https://djc.github.io/askama/).
