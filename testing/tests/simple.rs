@@ -27,6 +27,14 @@ fn test_variables() {
          in vars too: Iñtërnâtiônàlizætiøn"
     );
     assert_eq!(
+        s.render_bytes().unwrap().as_slice(),
+        "\nhello world, foo\n\
+         with number: 42\n\
+         Iñtërnâtiônàlizætiøn is important\n\
+         in vars too: Iñtërnâtiônàlizætiøn"
+            .as_bytes()
+    );
+    assert_eq!(
         <VariablesTemplate as SizedTemplate>::extension(),
         Some("html")
     );
@@ -401,4 +409,45 @@ struct DefineStringVar;
 fn test_define_string_var() {
     let template = DefineStringVar;
     assert_eq!(template.render().unwrap(), "");
+}
+
+pub mod no_implicit_prelude {
+    #![no_implicit_prelude]
+
+    use ::std::string::String as StdString;
+
+    #[derive(::askama::Template)]
+    #[template(
+        source = "{{str1}} {{str2}} {{str3}} {{num}} {{hash[\"key\"]}} {{disp}}",
+        ext = "txt"
+    )]
+    struct NoImplicitPreludeTemplate<'a, T>
+    where
+        T: ::std::fmt::Display,
+    {
+        str1: &'a str,
+        str2: ::std::string::String,
+        str3: StdString,
+        num: i64,
+        hash: ::std::collections::hash_map::HashMap<::std::string::String, StdString>,
+        disp: T,
+    }
+
+    #[test]
+    fn test_no_implicit_prelude() {
+        use ::askama::Template as _;
+        use ::std::convert::Into as _;
+        use ::std::{assert_eq, panic};
+        let mut hash = ::std::collections::hash_map::HashMap::new();
+        hash.insert("key".into(), "value".into());
+        let t = NoImplicitPreludeTemplate {
+            str1: "str1",
+            str2: "str2".into(),
+            str3: "str3".into(),
+            num: 42,
+            hash,
+            disp: -42,
+        };
+        assert_eq!(t.render().unwrap(), "str1 str2 str3 42 value -42");
+    }
 }

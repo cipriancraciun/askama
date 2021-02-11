@@ -1,0 +1,31 @@
+[
+{% stripspace %}
+
+  1 a
+  2 b
+
+  {% if true %}
+
+    3 c
+    4 d
+
+  {% else %}
+
+    5 e
+    6 f
+
+  {% endif %}
+
+  7 g
+  8 h
+
+{% include "stripspace-included.html" %}
+
+{% import "stripspace-macros.html" as macros %}
+{% call macros::stripspace_macro_1() %}
+
+{% macro stripspace_macro_2() %} M2 m2 {% endmacro %}
+{% call stripspace_macro_2() %}
+
+{% endstripspace %}
+]

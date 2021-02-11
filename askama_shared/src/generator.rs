@@ -42,6 +42,8 @@ struct Generator<'a, S: std::hash::BuildHasher> {
     // Whitespace suppression from the previous non-literal. Will be used to
     // determine whether to flush prefix whitespace from the next literal.
     skip_ws: bool,
+    // Always apply whitespace suppression in `stripspace` blocks.
+    strip_ws: bool,
     // If currently in a block, this will contain the name of a potential parent block
     super_block: Option<(&'a str, usize)>,
     // buffer for writable
@@ -66,6 +68,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             locals,
             next_ws: None,
             skip_ws: false,
+            strip_ws: false,
             super_block: None,
             buf_writable: vec![],
             named: 0,
@@ -121,11 +124,12 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
 
     // Implement `Template` for the given context struct.
     fn impl_template(&mut self, ctx: &'a Context, buf: &mut Buffer) -> Result<(), CompileError> {
-        self.write_header(buf, "::askama::Template", None)?;
+        self.write_header(buf, "::askama::SizedTemplate", None)?;
         buf.writeln(
-            "fn render_into(&self, writer: &mut dyn ::std::fmt::Write) -> \
+            "fn write_into <W: ::std::fmt::Write + ?::std::marker::Sized> (&self, writer: &mut W) -> \
              ::askama::Result<()> {",
         )?;
+        buf.writeln("use ::std::iter::IntoIterator as _;")?;
 
         // Make sure the compiler understands that the generated code depends on the template files.
         for path in self.contexts.keys() {
@@ -152,33 +156,55 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         }?;
 
         self.flush_ws(WS(false, false));
-        buf.writeln("Ok(())")?;
+        buf.writeln("::std::result::Result::Ok(())")?;
         buf.writeln("}")?;
 
-        buf.writeln("fn extension(&self) -> Option<&'static str> {")?;
+        buf.writeln("fn size_hint() -> usize {")?;
+        buf.writeln(&format!("{}", size_hint))?;
+        buf.writeln("}")?;
+
+        buf.writeln("fn extension() -> ::std::option::Option<&'static str> {")?;
         buf.writeln(&format!(
-            "{:?}",
+            "::std::option::Option::{:?}",
+            self.input.path.extension().map(|s| s.to_str().unwrap())
+        ))?;
+        buf.writeln("}")?;
+
+        buf.writeln("}")?;
+
+        self.write_header(buf, "::askama::Template", None)?;
+        buf.writeln(
+            "fn render(&self) -> ::askama::Result<::std::string::String> {
+                use ::askama::SizedTemplate;
+                let mut buf = ::std::string::String::with_capacity(self.size_hint());
+                self.write_into(&mut buf)?;
+                ::std::result::Result::Ok(buf)
+            }
+            fn render_into(&self, writer: &mut dyn ::std::fmt::Write) -> ::askama::Result<()> {
+                use ::askama::SizedTemplate;
+                return self.write_into(writer);
+            }
+            fn render_bytes(&self) -> ::askama::Result<::std::vec::Vec<u8>> {
+                use ::askama::SizedTemplate;
+                let mut buf = ::std::vec::Vec::with_capacity(self.size_hint());
+                self.write_into_bytes(&mut buf)?;
+                ::std::result::Result::Ok(buf)
+            }
+            fn render_into_bytes(&self, writer: &mut dyn ::std::io::Write) -> ::askama::Result<()> {
+                use ::askama::SizedTemplate;
+                return self.write_into_bytes(writer);
+            }",
+        )?;
+
+        buf.writeln("fn extension(&self) -> ::std::option::Option<&'static str> {")?;
+        buf.writeln(&format!(
+            "::std::option::Option::{:?}",
             self.input.path.extension().map(|s| s.to_str().unwrap())
         ))?;
         buf.writeln("}")?;
 
         buf.writeln("fn size_hint(&self) -> usize {")?;
         buf.writeln(&format!("{}", size_hint))?;
-        buf.writeln("}")?;
-
-        buf.writeln("}")?;
-
-        self.write_header(buf, "::askama::SizedTemplate", None)?;
-
-        buf.writeln("fn size_hint() -> usize {")?;
-        buf.writeln(&format!("{}", size_hint))?;
-        buf.writeln("}")?;
-
-        buf.writeln("fn extension() -> Option<&'static str> {")?;
-        buf.writeln(&format!(
-            "{:?}",
-            self.input.path.extension().map(|s| s.to_str().unwrap())
-        ))?;
         buf.writeln("}")?;
 
         buf.writeln("}")?;
@@ -484,6 +510,9 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
                     // No whitespace handling: child template top-level is not used,
                     // except for the blocks defined in it.
                 }
+                Node::StripSpace(ws1, ref contents, ws2) => {
+                    size_hint += self.write_strip_space(ctx, buf, ws1, contents, ws2, level)?;
+                }
             }
         }
 
@@ -703,6 +732,8 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         };
 
         self.flush_ws(ws); // Cannot handle_ws() here: whitespace from macro definition comes first
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
         self.locals.push();
         self.write_buf_writable(buf)?;
         buf.writeln("{")?;
@@ -731,6 +762,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         size_hint += self.write_buf_writable(buf)?;
         buf.writeln("}")?;
         self.locals.pop();
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(ws);
         Ok(size_hint)
     }
@@ -743,6 +775,8 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         path: &str,
     ) -> Result<usize, CompileError> {
         self.flush_ws(ws);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
         self.write_buf_writable(buf)?;
         let path = self
             .input
@@ -770,6 +804,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             size_hint += gen.write_buf_writable(buf)?;
             size_hint
         };
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(ws);
         Ok(size_hint)
     }
@@ -844,6 +879,8 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     ) -> Result<usize, CompileError> {
         // Flush preceding whitespace according to the outer WS spec
         self.flush_ws(outer);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = false;
 
         let prev_block = self.super_block;
         let cur = match (name, prev_block) {
@@ -897,6 +934,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
         // Restore original block context and set whitespace suppression for
         // succeeding whitespace according to the outer WS spec
         self.super_block = prev_block;
+        self.strip_ws = old_strip_ws;
         self.prepare_ws(outer);
         Ok(size_hint)
     }
@@ -904,6 +942,26 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     fn write_expr(&mut self, ws: WS, s: &'a Expr<'a>) {
         self.handle_ws(ws);
         self.buf_writable.push(Writable::Expr(s));
+    }
+
+    fn write_strip_space(
+        &mut self,
+        ctx: &'a Context,
+        buf: &mut Buffer,
+        ws1: WS,
+        contents: &'a [Node],
+        ws2: WS,
+        level: AstLevel,
+    ) -> Result<usize, CompileError> {
+        self.flush_ws(ws1);
+        let old_strip_ws = self.strip_ws;
+        self.strip_ws = true;
+        self.prepare_ws(ws1);
+        let size_hint = self.handle(ctx, &contents, buf, level)?;
+        self.flush_ws(ws2);
+        self.strip_ws = old_strip_ws;
+        self.prepare_ws(ws2);
+        Ok(size_hint)
     }
 
     // Write expression buffer and empty
@@ -972,7 +1030,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
             }
         }
 
-        buf.writeln("write!(")?;
+        buf.writeln("::std::write!(")?;
         buf.indent();
         buf.writeln("writer,")?;
         buf.writeln(&format!("{:#?},", &buf_format.buf))?;
@@ -983,6 +1041,9 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     }
 
     fn visit_lit(&mut self, lws: &'a str, val: &'a str, rws: &'a str) {
+        if self.next_ws.is_some() {
+            self.flush_ws(WS(false, false));
+        }
         assert!(self.next_ws.is_none());
         if !lws.is_empty() {
             if self.skip_ws {
@@ -1441,7 +1502,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     // prefix whitespace suppressor from the given argument, flush that whitespace.
     // In either case, `next_ws` is reset to `None` (no trailing whitespace).
     fn flush_ws(&mut self, ws: WS) {
-        if self.next_ws.is_some() && !ws.0 {
+        if self.next_ws.is_some() && !self.strip_ws && !ws.0 {
             let val = self.next_ws.unwrap();
             if !val.is_empty() {
                 self.buf_writable.push(Writable::Lit(val));
@@ -1454,7 +1515,7 @@ impl<'a, S: std::hash::BuildHasher> Generator<'a, S> {
     // argument, to determine whether to suppress leading whitespace from the
     // next literal.
     fn prepare_ws(&mut self, ws: WS) {
-        self.skip_ws = ws.1;
+        self.skip_ws = self.strip_ws || ws.1;
     }
 }
 
