@@ -77,7 +77,34 @@ fn find_used_templates(
 ) -> Result<(), CompileError> {
     let mut check = vec![(input.path.clone(), source)];
     while let Some((path, source)) = check.pop() {
-        for n in parse(&source, input.syntax)? {
+        let nodes = parse(&source, input.syntax)?;
+
+        let mut top_nodes = Vec::with_capacity(nodes.len());
+        let mut top_nodes_queue = Vec::with_capacity(nodes.len());
+        for n in &nodes {
+            top_nodes_queue.push(n);
+        }
+        loop {
+            let n = if let Some(n) = top_nodes_queue.pop() {
+                n
+            } else {
+                break;
+            };
+            match n {
+                Node::Extends(_)
+                | Node::BlockDef(_, _, _, _)
+                | Node::Macro(_, _)
+                | Node::Import(_, _, _) => top_nodes.push(n),
+                Node::StripSpace(_, ref nodes, _) => {
+                    for n in nodes {
+                        top_nodes_queue.push(n);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        for n in top_nodes {
             match n {
                 Node::Extends(Expr::StrLit(extends)) => {
                     let extends = input.config.find_template(extends, Some(&path))?;
