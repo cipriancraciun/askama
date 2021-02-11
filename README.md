@@ -1,9 +1,26 @@
-# Askama
+# [patched fork] Askama
 
-[![Documentation](https://docs.rs/askama/badge.svg)](https://docs.rs/askama/)
-[![Latest version](https://img.shields.io/crates/v/askama.svg)](https://crates.io/crates/askama)
-[![Build Status](https://github.com/djc/askama/workflows/CI/badge.svg)](https://github.com/djc/askama/actions?query=workflow%3ACI)
-[![Chat](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/djc/askama)
+
+**This is a patched fork!**  What follows bellow after the line, is from the original Askama readme.
+
+In order to use this patched fork you can do the following:
+* just replace `askama` with `askama_patched` in your `Cargo.toml` and Rust sources;
+* alternatively, as a drop-in replacement without changing any of your Rust sources just rename the dependency in `Cargo.toml` as:
+~~~~
+[dependencies]
+askama = { package = "askama_patched", version = "*" }
+~~~~
+
+
+[![Documentation](https://docs.rs/askama_patched/badge.svg)](https://docs.rs/askama_patched)
+[![Latest version](https://img.shields.io/crates/v/askama_patched.svg)](https://crates.io/crates/askama_patched)
+
+
+----
+
+
+## [original readme]
+
 
 Askama implements a template rendering engine based on Jinja.
 It generates Rust code from your templates at compile time
@@ -49,7 +66,7 @@ in a for-profit context, please consider supporting my open source work on
 [docs]: https://djc.github.io/askama/
 [fafhrd91]: https://github.com/fafhrd91
 [mitsuhiko]: http://lucumr.pocoo.org/
-[issues]: https://github.com/djc/askama/issues
+[issues]: https://github.com/cipriancraciun/askama/issues
 [twitter]: https://twitter.com/djco/
 [dtolnay]: https://github.com/dtolnay
 [patreon]: https://www.patreon.com/dochtman
@@ -97,4 +114,4 @@ You should now be able to compile and run this code.
 
 Review the [test cases] for more examples.
 
-[test cases]: https://github.com/djc/askama/tree/main/testing
+[test cases]: https://github.com/cipriancraciun/askama/tree/main/testing

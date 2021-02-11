@@ -1,13 +1,13 @@
 [package]
-name = "askama"
+name = "askama_patched"
 version = "0.10.5"
-authors = ["Dirkjan Ochtman <dirkjan@ochtman.nl>"]
-description = "Type-safe, compiled Jinja-like templates for Rust"
-documentation = "https://docs.rs/askama"
+authors = ["Ciprian Dorin Craciun <ciprian@volution.ro>", "Dirkjan Ochtman <dirkjan@ochtman.nl>"]
+description = "[patched fork] Type-safe, compiled Jinja-like templates for Rust"
 keywords = ["markup", "template", "jinja2", "html"]
 categories = ["template-engine"]
-homepage = "https://github.com/djc/askama"
-repository = "https://github.com/djc/askama"
+documentation = "https://docs.rs/askama_patched"
+homepage = "https://github.com/cipriancraciun/askama"
+repository = "https://github.com/cipriancraciun/askama"
 license = "MIT OR Apache-2.0"
 workspace = ".."
 readme = "../README.md"
@@ -33,9 +33,9 @@ with-tide = ["askama_derive/tide"]
 with-warp = ["askama_derive/warp"]
 
 [dependencies]
-askama_derive = { version = "0.10.5", path = "../askama_derive" }
-askama_escape = { version = "0.10", path = "../askama_escape" }
-askama_shared = { version = "0.11", path = "../askama_shared", default-features = false }
+askama_derive = { package = "askama_patched_derive", version = "0.10", path = "../askama_derive" }
+askama_escape = { package = "askama_patched_escape", version = "0.10", path = "../askama_escape" }
+askama_shared = { package = "askama_patched_shared", version = "0.11", path = "../askama_shared", default-features = false }
 mime = { version = "0.3", optional = true }
 mime_guess = { version = "2.0.0-alpha", optional = true }
 

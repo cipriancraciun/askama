@@ -1,12 +1,12 @@
 [package]
-name = "askama_escape"
+name = "askama_patched_escape"
 version = "0.10.1"
-authors = ["Dirkjan Ochtman <dirkjan@ochtman.nl>"]
-description = "Optimized HTML escaping code, extracted from Askama"
-documentation = "https://docs.rs/askama_escape"
+authors = ["Ciprian Dorin Craciun <ciprian@volution.ro>", "Dirkjan Ochtman <dirkjan@ochtman.nl>"]
+description = "[patched fork] Optimized HTML escaping code, extracted from Askama"
 keywords = ["html", "escaping"]
-homepage = "https://github.com/djc/askama"
-repository = "https://github.com/djc/askama"
+documentation = "https://docs.rs/askama_patched_escape"
+homepage = "https://github.com/cipriancraciun/askama"
+repository = "https://github.com/cipriancraciun/askama"
 license = "MIT OR Apache-2.0"
 workspace = ".."
 readme = "README.md"
